@@ -1,10 +1,13 @@
-# TODO: check for circular imports and put all possible imports here
 import threading
 import socket
 import subprocess
 import os
 import json
 import sys
+import platform
+import shutil
+import resource
+import psutil
 
 import numpy as np
 import gym
@@ -59,8 +62,7 @@ class Argos3Env(gym.Env):
         host = '127.0.0.1'
         port = get_free_port(host)
         logger.debug('Port: {}'.format(port))
-        assert.port != 0
-        import platform
+        assert port != 0
         logger.debug(f"Platform {platform.platform()}")
         pl = 'unix' # you must not use windows. Windows bad.
         self.sim_path = os.path.join(os.path.dirname(__file__),
@@ -95,14 +97,13 @@ class Argos3Env(gym.Env):
 
             config_dir = os.path.expanduser('~/.config/argos3/plow-argos3') # which means that's where you have to put the config files
             if os.path.isdir(config_dir):
-                from shutil import rmtree
-                rmtree(config_dir, ignore_errors=True)
+                #from shutil import rmtree
+                shutil.rmtree(config_dir, ignore_errors=True)
 
         def limit():
             """ Limits resources used. Only limits the
             address space by default.
             """
-            import resource
             l = 6 * 1024**3 #for 3gb of address space. Works for unity so should be more than enough.
             try:
                 # set whatever limits you want in this block
@@ -115,7 +116,6 @@ class Argos3Env(gym.Env):
         begins a thread and establishes a connection to the simulator.
         """
         stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_unity else subprocess.DEVNULL)
-        import shutil
         self.proc = subprocess.Popen([bin,
                                       *(['-logfile'] if self.log_unity else []),
                                       *(['-batchmode', '-nographics'] if self.batchmode else []),
@@ -230,7 +230,6 @@ class Argos3Env(gym.Env):
         return port
 
     def memory_usage(pid):
-        import psutil
         proc = psutil.Process(pid)
         mem = proc.memory_info().rss #resident memory
         for child in proc.children(recursive=True):
