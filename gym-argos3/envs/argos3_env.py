@@ -26,7 +26,7 @@ class Argos3Env(gym.Env):
     """
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, batchmode):
+    def __init__(self, width, height, batchmode):
         """ Initializes everything.
         """
         self.proc = None
@@ -119,8 +119,8 @@ class Argos3Env(gym.Env):
         self.proc = subprocess.Popen([bin,
                                       *(['-logfile'] if self.log_unity else []),
                                       *(['-batchmode', '-nographics'] if self.batchmode else []),
-                                      '-screen-width {}'.format(self.w),
-                                      '-screen-height {}'.format(self.h),
+                                      '-screen-width {}'.format(self.width),
+                                      '-screen-height {}'.format(self.height),
                                       ],
                                      env=env,
                                      stdout=stderr,
@@ -173,11 +173,11 @@ class Argos3Env(gym.Env):
             data_in += chunk
 
         state = np.frombuffer(data_in, np.float32, self.state_dim, 0)
-        # if not treating frames
+        # if not looking at frames (automated processing, no humans)
         if self.batchmode:
             frame = None
         else:
-            # convert frame pixels to numpy array (4 frames(?))
+            # convert frame pixels to numpy array (4 frames after the 4 states)
             frame = np.frombuffer(data_in, np.uint8, -1, self.state_dim * 4)
             frame = np.reshape(frame, [self.width, self.height, 4])
             frame = frame[::-1, :, :3]
