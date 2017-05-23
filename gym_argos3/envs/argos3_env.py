@@ -117,9 +117,9 @@ class Argos3Env(gym.Env):
         """The following configures stderr, launches a subprocess,
         begins a thread and establishes a connection to the simulator.
         """
-        stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_unity else subprocess.DEVNULL)
+        stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_argos3 else subprocess.DEVNULL)
         self.proc = subprocess.Popen([bin,
-                                      *(['-logfile'] if self.log_unity else []),
+                                      *(['-logfile'] if self.log_argos3 else []),
                                       *(['-batchmode', '-nographics'] if self.batchmode else []),
                                       '-screen-width {}'.format(self.width),
                                       '-screen-height {}'.format(self.height),
@@ -222,15 +222,6 @@ class Argos3Env(gym.Env):
     def _render(self, mode='human', *args, **kwargs):
         pass
 
-    def get_free_port(host):
-        """As the name indicates, get a port.
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((host, 0))
-        port = sock.getsockname()[1]
-        sock.close()
-        return port
-
     def memory_usage(pid):
         proc = psutil.Process(pid)
         mem = proc.memory_info().rss #resident memory
@@ -240,3 +231,13 @@ class Argos3Env(gym.Env):
             except psutil.NoSuchProcess:
                 pass
         return mem
+
+def get_free_port(host):
+    """As the name indicates, get a port.
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
