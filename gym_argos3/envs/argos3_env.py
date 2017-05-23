@@ -11,7 +11,9 @@ import psutil
 
 import numpy as np
 import gym
-from gym import spaces
+from gym import error, spaces, utils
+from gym.utils import seeding
+
 
 import logging
 logger = logging.getLogger('Argos3Env')
