@@ -9,6 +9,8 @@ import shutil
 import resource
 import psutil
 
+from time import sleep
+
 import numpy as np
 import gym
 from gym import error, spaces, utils
@@ -67,16 +69,17 @@ class Argos3Env(gym.Env):
         assert port != 0
         logger.debug(f"Platform {platform.platform()}")
         pl = 'unix' # you must not use windows. Windows bad.
-        self.sim_path = os.path.join(os.path.dirname(__file__),
-                '..', 'simulator', 'bin', pl)
-        bin = os.path.join(os.path.dirname(__file__), '..', 'simulator', 'bin',
-                pl, 'sim.x86_64')
+        #self.sim_path = os.path.join(os.path.dirname(__file__),
+                #'̃~', 'plow', 'argos3', 'simulator', 'bin', pl))
+        #bin = os.path.join(os.path.dirname(__file__), '..', 'simulator', 'bin',
+        #        pl, 'sim.x86_64')
+        bin = os.path.join('..', 'dummy')
         bin = os.path.abspath(bin)
         env = os.environ.copy()
 
         env.update(ARGOS_PORT=str(port))
 
-        logger.debug(f'Simulator binary {bin}')
+        #logger.debug(f'Simulator binary {bin}')
 
         def stdw():
             """ Takes whatever the subprocess is emiting
@@ -85,6 +88,16 @@ class Argos3Env(gym.Env):
             for c in iter(lambda: self.proc.stdout.read(1), ''):
                 sys.stdout.write(c)
                 sys.stdout.flush()
+
+        def memory_usage(pid):
+            proc = psutil.Process(pid)
+            mem = proc.memory_info().rss #resident memory
+            for child in proc.children(recursive=True):
+                try:
+                    mem += child.memory_info().rss
+                except psutil.NoSuchProcess:
+                    pass
+            return mem
 
         def poll():
             """ Limits the memory used by the subprocess.
@@ -118,17 +131,23 @@ class Argos3Env(gym.Env):
         begins a thread and establishes a connection to the simulator.
         """
         stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_argos3 else subprocess.DEVNULL)
+        #self.proc = subprocess.Popen([bin,
+        #                              *(['-logfile'] if self.log_argos3 else []),
+        #                              *(['-batchmode', '-nographics'] if self.batchmode else []),
+        #                              '-screen-width {}'.format(self.width),
+        #                              '-screen-height {}'.format(self.height),
+        #                              ],
+        #                             env=env,
+        #                             stdout=stderr,
+        #                             stderr=stderr,
+        #                             universal_newlines=True,
+        #                             preexec_fn=limit)
         self.proc = subprocess.Popen([bin,
-                                      *(['-logfile'] if self.log_argos3 else []),
-                                      *(['-batchmode', '-nographics'] if self.batchmode else []),
-                                      '-screen-width {}'.format(self.width),
-                                      '-screen-height {}'.format(self.height),
-                                      ],
-                                     env=env,
-                                     stdout=stderr,
-                                     stderr=stderr,
-                                     universal_newlines=True,
-                                     preexec_fn=limit)
+                                      '-c argos/crossroad-fb.argos'],
+                                      env=env,
+                                      stdout=stderr,
+                                      universal_newlines=True,
+                                      preexec_fn=limit)
 
         threading.Thread(target=poll, daemon=True).start()
 
