@@ -38,11 +38,10 @@ class Argos3Env(gym.Env):
         self.connected = False
 
         self.batchmode = batchmode
-        # self.w and self.h are frame width and height
-        self.width = 128
-        self.height = 128 # to check
-        self.action_dim = 1
-        self.state_dim = 3 # speed, distance to init, proxim
+        self.width = width
+        self.height = height
+        self.action_dim = 8 # but there are 8 of them
+        self.state_dim = 400 # speed, distance to init, proxim
         self.buffer_size = self.state_dim * 4
         self.action_space = spaces.Box(-np.ones(self.action_dim),
                 np.ones(self.action_dim))
@@ -79,7 +78,7 @@ class Argos3Env(gym.Env):
 
         env.update(ARGOS_PORT=str(port))
 
-        #logger.debug(f'Simulator binary {bin}')
+        logger.debug(f'Simulator binary {bin}')
 
         def stdw():
             """ Takes whatever the subprocess is emiting
@@ -151,7 +150,7 @@ class Argos3Env(gym.Env):
 
         threading.Thread(target=poll, daemon=True).start()
 
-        # threading.Thread(target=stdw, daemon=True).start()
+        threading.Thread(target=stdw, daemon=True).start()
 
         # wait until connection with simulator process
         timeout = 20
@@ -191,6 +190,7 @@ class Argos3Env(gym.Env):
         data_in = b""
         while len(data_in) < self.buffer_size:
             chunk = self.soc.recv(min(1024, self.buffer_size - len(data_in)))
+            #chunk = b'plop'
             data_in += chunk
 
         state = np.frombuffer(data_in, np.float32, self.state_dim, 0)
@@ -211,9 +211,9 @@ class Argos3Env(gym.Env):
     def send(self, action, reset=False):
         """ Send action to execute through socket.
         """
-        a = np.concatenate((action, [1. if reset else 0.])) # there must be a more elegant way to put it
+        a = np.concatenate((action, [1. if reset else 0.]))
         a = np.array(a, dtype=np.float32)
-        assert a.shape == (self.action_dim + 1,) #, is for the weird way Boxes are handled
+        assert a.shape == (self.action_dim + 1,)
 
         data_out = a.tobytes()
         self.soc.sendall(data_out)
