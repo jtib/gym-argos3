@@ -72,6 +72,7 @@ class Argos3Env(gym.Env):
                 #'̃~', 'plow', 'argos3', 'simulator', 'bin', pl))
         #bin = os.path.join(os.path.dirname(__file__), '..', 'simulator', 'bin',
         #        pl, 'sim.x86_64')
+        bin = os.path.join('
         bin = os.path.join('..', 'dummy')
         bin = os.path.abspath(bin)
         env = os.environ.copy()
@@ -133,16 +134,14 @@ class Argos3Env(gym.Env):
         #self.proc = subprocess.Popen([bin,
         #                              *(['-logfile'] if self.log_argos3 else []),
         #                              *(['-batchmode', '-nographics'] if self.batchmode else []),
-        #                              '-screen-width {}'.format(self.width),
-        #                              '-screen-height {}'.format(self.height),
+        #                              '-c', 'plow-argos3/argos/crossroad-fb.argos'
         #                              ],
         #                             env=env,
         #                             stdout=stderr,
         #                             stderr=stderr,
         #                             universal_newlines=True,
         #                             preexec_fn=limit)
-        self.proc = subprocess.Popen([bin,
-                                      '-c argos/crossroad-fb.argos'],
+        self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos'],
                                       env=env,
                                       stdout=stderr,
                                       universal_newlines=True,
