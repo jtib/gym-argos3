@@ -72,9 +72,9 @@ class Argos3Env(gym.Env):
                 #'̃~', 'plow', 'argos3', 'simulator', 'bin', pl))
         #bin = os.path.join(os.path.dirname(__file__), '..', 'simulator', 'bin',
         #        pl, 'sim.x86_64')
-        bin = os.path.join('
-        bin = os.path.join('..', 'dummy')
-        bin = os.path.abspath(bin)
+        #bin = os.path.join('..', 'dummy')
+        #bin = os.path.abspath(bin)
+        bin = os.path.join('/usr/bin/argos3')
         env = os.environ.copy()
 
         env.update(ARGOS_PORT=str(port))
