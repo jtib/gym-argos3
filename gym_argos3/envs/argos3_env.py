@@ -141,7 +141,7 @@ class Argos3Env(gym.Env):
         #                             stderr=stderr,
         #                             universal_newlines=True,
         #                             preexec_fn=limit)
-        self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos'],
+        self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos', '-e', './argos3_ddpg.log'],
                                       env=env,
                                       stdout=stderr,
                                       universal_newlines=True,
@@ -149,7 +149,7 @@ class Argos3Env(gym.Env):
 
         threading.Thread(target=poll, daemon=True).start()
 
-        threading.Thread(target=stdw, daemon=True).start()
+        #threading.Thread(target=stdw, daemon=True).start()
 
         # wait until connection with simulator process
         timeout = 20
@@ -162,6 +162,7 @@ class Argos3Env(gym.Env):
             self.soc.connect((host, port))
             self.soc.settimeout(20*60) # 20 minutes
             self.connected = True
+            logger.debug('finally connected')
             break
           except ConnectionRefusedError as e:
             if i == timeout * 10 - 1:
