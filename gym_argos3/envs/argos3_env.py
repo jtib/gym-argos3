@@ -40,14 +40,17 @@ class Argos3Env(gym.Env):
         self.batchmode = batchmode
         self.width = width
         self.height = height
-        self.action_dim = 8 # but there are 8 of them
-        self.state_dim = 400 # speed, distance to init, proxim
-        self.buffer_size = self.state_dim * 4
-        self.action_space = spaces.Box(-np.ones(self.action_dim),
-                np.ones(self.action_dim))
         self.log_argos3 = False
         self.logfile = None
         self.restart = False
+
+    def setRobotsNumber(self, number):
+        self.robots_num = number
+        self.action_dim = number
+        self.state_dim = number*(1+24*2+1)
+        self.buffer_size = self.state_dim * 4
+        self.action_space = spaces.Box(-np.ones(self.action_dim),
+                np.ones(self.action_dim))
 
     def conf(self, loglevel='INFO', log_argos3=False, logfile=None, *args, **kwargs):
         """ Configures the logger.
@@ -107,7 +110,7 @@ class Argos3Env(gym.Env):
                 if memory_usage(self.proc.pid) > limit * 1024**3:
                     logger.warning(f'Memory usage above {limit}gb. Restarting after this episode.')
                     self.restart = True
-                sleep(5) # oh my god eeeww
+                sleep(5)
             logger.debug(f'Unity returned with {self.proc.returncode}')
 
             config_dir = os.path.expanduser('~/.config/argos3/plow-argos3') # which means that's where you have to put the config files
