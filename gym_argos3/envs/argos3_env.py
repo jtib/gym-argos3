@@ -49,7 +49,7 @@ class Argos3Env(gym.Env):
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
         self.buffer_size = self.state_dim * 4
-        self.action_space = spaces.Box(-np.ones(self.action_dim),
+        self.action_space = spaces.Box(-np.zeros(self.action_dim),
                 np.ones(self.action_dim))
 
     def conf(self, loglevel='INFO', log_argos3=False, logfile=None, *args, **kwargs):
