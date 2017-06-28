@@ -30,27 +30,33 @@ class Argos3Env(gym.Env):
     """
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, width, height, batchmode):
+    def __init__(self, width, height):
         """ Initializes everything.
         """
         self.proc = None
         self.soc = None
         self.connected = False
 
-        self.batchmode = batchmode
         self.width = width
         self.height = height
         self.log_argos3 = False
         self.logfile = None
         self.restart = False
 
-    def setRobotsNumber(self, number):
+    def setParams(self, number, min_speed, max_speed, data_type):
         self.robots_num = number
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
-        self.buffer_size = self.state_dim * 4
-        self.action_space = spaces.Box(-np.zeros(self.action_dim),
-                np.ones(self.action_dim))
+        self.frame_dim = 2 + 1000000 #need more precise estimate
+        if data_type is "numeric":
+            self.buffer_size = self.state_dim
+        else:
+            self.buffer_size = self.frame_dim + self.state_dim
+        self.action_space = spaces.Box(
+                min_speed * np.ones(self.action_dim),
+                max_speed * np.ones(self.action_dim))
+        self.data_type = data_type;
+
 
     def conf(self, loglevel='INFO', log_argos3=False, logfile=None, *args, **kwargs):
         """ Configures the logger.
@@ -70,17 +76,13 @@ class Argos3Env(gym.Env):
         logger.debug('Port: {}'.format(port))
         assert port != 0
         logger.debug(f"Platform {platform.platform()}")
-        pl = 'unix' # you must not use windows. Windows bad.
-        #self.sim_path = os.path.join(os.path.dirname(__file__),
-                #'̃~', 'plow', 'argos3', 'simulator', 'bin', pl))
-        #bin = os.path.join(os.path.dirname(__file__), '..', 'simulator', 'bin',
-        #        pl, 'sim.x86_64')
-        #bin = os.path.join('..', 'dummy')
-        #bin = os.path.abspath(bin)
+        pl = 'unix'
         bin = os.path.join('/usr/bin/argos3')
         env = os.environ.copy()
 
         env.update(ARGOS_PORT=str(port))
+
+        env.update(DATA=self.data_type)
 
         logger.debug(f'Simulator binary {bin}')
 
@@ -115,7 +117,6 @@ class Argos3Env(gym.Env):
 
             config_dir = os.path.expanduser('~/.config/argos3/plow-argos3') # which means that's where you have to put the config files
             if os.path.isdir(config_dir):
-                #from shutil import rmtree
                 shutil.rmtree(config_dir, ignore_errors=True)
 
         def limit():
@@ -134,16 +135,6 @@ class Argos3Env(gym.Env):
         begins a thread and establishes a connection to the simulator.
         """
         stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_argos3 else subprocess.DEVNULL)
-        #self.proc = subprocess.Popen([bin,
-        #                              *(['-logfile'] if self.log_argos3 else []),
-        #                              *(['-batchmode', '-nographics'] if self.batchmode else []),
-        #                              '-c', 'plow-argos3/argos/crossroad-fb.argos'
-        #                              ],
-        #                             env=env,
-        #                             stdout=stderr,
-        #                             stderr=stderr,
-        #                             universal_newlines=True,
-        #                             preexec_fn=limit)
         self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos', '-e', './argos3_ddpg.log'],
                                       env=env,
                                       stdout=stderr,
@@ -193,17 +184,19 @@ class Argos3Env(gym.Env):
         data_in = b""
         while len(data_in) < self.buffer_size:
             chunk = self.soc.recv(min(1024, self.buffer_size - len(data_in)))
-            #chunk = b'plop'
             data_in += chunk
 
-        state = np.frombuffer(data_in, np.float32, self.state_dim, 0)
-        # if not looking at frames (automated processing, no humans)
-        if self.batchmode:
+        # if not looking at frames
+        if self.data_type is "numeric":
+            state = np.frombuffer(data_in, np.float32, self.state_dim, 0)
             frame = None
         else:
-            # convert frame pixels to numpy array (4 frames after the 4 states)
-            frame = np.frombuffer(data_in, np.uint8, -1, self.state_dim * 4)
-            frame = np.reshape(frame, [self.width, self.height, 4])
+            # convert frame pixels to numpy array
+            byte_number = np.frombuffer(data_in, int, 1, 0)
+            bytes_per_line = np.frombuffer(data_in, int, 1, 1)
+            frame = np.frombuffer(data_in, np.uint8, byte_number, 2)
+            bytes_per_col = byte_number/bytes_per_line
+            frame = np.reshape(frame, [bytes_per_line, bytes_per_col])
             frame = frame[::-1, :, :3]
 
         self.last_frame = frame
