@@ -48,8 +48,8 @@ class Argos3Env(gym.Env):
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
         self.frame_dim = 2 + 1000000 #need more precise estimate
-        if data_type is "numeric":
-            self.buffer_size = self.state_dim
+        if data_type is "numerical":
+            self.buffer_size = self.state_dim * 4
         else:
             self.buffer_size = self.frame_dim + self.state_dim
         self.action_space = spaces.Box(
@@ -187,7 +187,7 @@ class Argos3Env(gym.Env):
             data_in += chunk
 
         # if not looking at frames
-        if self.data_type is "numeric":
+        if self.data_type is "numerical":
             state = np.frombuffer(data_in, np.float32, self.state_dim, 0)
             frame = None
         else:
