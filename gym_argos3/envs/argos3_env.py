@@ -47,7 +47,7 @@ class Argos3Env(gym.Env):
         self.robots_num = number
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
-        self.frame_dim = 2 + 1000000 #need more precise estimate
+        self.frame_dim = 20000000000000 #need more precise estimate
         if data_type is "numerical":
             self.buffer_size = self.state_dim * 4
         else:
@@ -192,15 +192,17 @@ class Argos3Env(gym.Env):
             frame = None
         else:
             # convert frame pixels to numpy array
-            byte_number = np.frombuffer(data_in, int, 1, 0)
-            bytes_per_line = np.frombuffer(data_in, int, 1, 1)
+            byte_number = np.frombuffer(data_in, int, 1, 0)[0]
+            bytes_per_line = np.frombuffer(data_in, int, 1, 1)[0]
             frame = np.frombuffer(data_in, np.uint8, byte_number, 2)
             bytes_per_col = byte_number/bytes_per_line
             frame = np.reshape(frame, [bytes_per_line, bytes_per_col])
             frame = frame[::-1, :, :3]
+            state = None
+            logger.debug("Frame received")
 
-        self.last_frame = frame
         self.last_state = state
+        self.last_frame = frame
 
         return state, frame
 
