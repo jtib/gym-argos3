@@ -47,7 +47,7 @@ class Argos3Env(gym.Env):
         self.robots_num = number
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
-        self.frame_dim = 20000000000000 #need more precise estimate
+        self.frame_dim = 20000000000000
         if data_type is "numerical":
             self.buffer_size = self.state_dim * 4
         else:
@@ -77,7 +77,7 @@ class Argos3Env(gym.Env):
         assert port != 0
         logger.debug(f"Platform {platform.platform()}")
         pl = 'unix'
-        bin = os.path.join('/usr/bin/argos3')
+        bin = os.path.join('/usr/local/bin/argos3')
         env = os.environ.copy()
 
         env.update(ARGOS_PORT=str(port))
@@ -135,7 +135,7 @@ class Argos3Env(gym.Env):
         begins a thread and establishes a connection to the simulator.
         """
         stderr = self.logfile if self.logfile else (subprocess.PIPE if self.log_argos3 else subprocess.DEVNULL)
-        self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos', '-e', './argos3_ddpg.log'],
+        self.proc = subprocess.Popen([bin, '-c', 'plow-argos3/argos/crossroad-fb.argos', '-e', './ddpg.log'],
                                       env=env,
                                       stdout=stderr,
                                       universal_newlines=True,
