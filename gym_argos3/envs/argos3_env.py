@@ -8,6 +8,7 @@ import platform
 import shutil
 import resource
 import psutil
+import sh
 
 from time import sleep
 
@@ -47,7 +48,7 @@ class Argos3Env(gym.Env):
         self.robots_num = number
         self.action_dim = number
         self.state_dim = number*(1+24*2+1)
-        self.frame_dim = 20000000000000
+        self.frame_dim = 2000000000
         if data_type is "numerical":
             self.buffer_size = self.state_dim * 4
         else:
@@ -77,7 +78,8 @@ class Argos3Env(gym.Env):
         assert port != 0
         logger.debug(f"Platform {platform.platform()}")
         pl = 'unix'
-        bin = os.path.join('/usr/local/bin/argos3')
+        #bin = os.path.join('/usr/local/bin/argos3')
+        bin = sh.which('argos3')
         env = os.environ.copy()
 
         env.update(ARGOS_PORT=str(port))
@@ -192,9 +194,10 @@ class Argos3Env(gym.Env):
             frame = None
         else:
             # convert frame pixels to numpy array
-            byte_number = np.frombuffer(data_in, int, 1, 0)[0]
-            bytes_per_line = np.frombuffer(data_in, int, 1, 1)[0]
-            frame = np.frombuffer(data_in, np.uint8, byte_number, 2)
+            # 80x80 frame (6400 pixels)
+            bytes_per_line = 80
+            byte_number = bytes_per_line**2
+            frame = np.frombuffer(data_in, np.uint8, byte_number, 0)
             bytes_per_col = byte_number/bytes_per_line
             frame = np.reshape(frame, [bytes_per_line, bytes_per_col])
             frame = frame[::-1, :, :3]
