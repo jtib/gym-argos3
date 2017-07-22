@@ -78,7 +78,6 @@ class Argos3Env(gym.Env):
         assert port != 0
         logger.debug(f"Platform {platform.platform()}")
         pl = 'unix'
-        #bin = os.path.join('/usr/local/bin/argos3')
         bin = sh.which('argos3')
         env = os.environ.copy()
 
